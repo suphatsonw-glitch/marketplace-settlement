@@ -2,50 +2,86 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0d2e1a">
 <title>Marketplace Settlement & SAP Sync</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&family=Sarabun:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#0b1f17;--card:#133024;--line:#24503b;--ink:#e6f3ea;--mute:#8fb5a0;--accent:#4ade80;--accent-ink:#06210f;--bad:#f87171;--warn:#fbbf24;color-scheme:dark}
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 "Noto Sans Thai","Sarabun",system-ui,sans-serif;padding:16px;max-width:1100px;margin-inline:auto}
-header{display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;align-items:center;margin-bottom:8px}
-h1{font-size:22px;margin:0}
-h2{font-size:17px;margin:0 0 12px}
-.sub{color:var(--mute);font-size:13px}
-section{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:16px}
-.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;align-items:start}
-label{display:block;font-size:13px;color:var(--mute);margin-bottom:3px}
-input,select,textarea{width:100%;background:#0b1f17;color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:8px 10px;font:inherit}
-input:focus,select:focus,textarea:focus,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
-button{background:#1c4733;color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:8px 14px;font:inherit;cursor:pointer}
-button:hover{background:#235a3f}
-button.pri{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
-button.pri:hover{background:#6ee79a}
-button.del{padding:2px 8px;color:var(--bad)}
+:root{--bg:#f0f4f0;--surface:#fff;--border:#d0dcd0;--border2:#e3eae3;--green:#1a7a3c;--green-l:#e8f5ee;--green-m:#b8dfc8;--green-dk:#145f2f;--df-green:#1a4a2e;--df-green-btn:#2d8a52;--yellow-l:#fff8e0;--red:#c0392b;--red-l:#fdecea;--text:#1a2a1a;--muted:#5f7f5f;--r:12px;--sh:0 2px 8px rgba(0,60,20,.1);--sh2:0 4px 20px rgba(0,60,20,.14);--safe-b:env(safe-area-inset-bottom,0px);--ease:cubic-bezier(.2,.9,.3,1)}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--text);font-family:"Sarabun","Noto Sans Thai",system-ui,-apple-system,"Segoe UI",sans-serif;font-size:16px;line-height:1.45;font-variant-numeric:tabular-nums;overflow:hidden}
+button,input,select,textarea{font-family:inherit;font-size:inherit;color:inherit}
+button{cursor:pointer}
+h1,h2,h3{margin:0;line-height:1.25}
+:focus-visible{outline:3px solid #22a050;outline-offset:2px}
+@keyframes cardIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+@keyframes modalIn{from{transform:translateY(22px) scale(.97);opacity:0}to{transform:none;opacity:1}}
+#app{height:100vh;height:100dvh;display:flex;flex-direction:column;max-width:860px;margin:0 auto;background:var(--bg);box-shadow:0 0 40px rgba(0,40,15,.12)}
+.topbar{flex:none;display:flex;align-items:center;gap:10px;padding:8px 12px;padding-top:calc(8px + env(safe-area-inset-top,0px));color:#fff;background:linear-gradient(135deg,#0d2e1a 0%,#1a4a2e 60%,#22683f 100%);box-shadow:0 2px 12px rgba(0,30,10,.4);position:relative;z-index:5}
+.tb-logo{flex:none;width:40px;height:40px;border-radius:12px;background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.25);display:grid;place-items:center;font-size:22px}
+.tb-text{flex:1;min-width:0}
+.tb-title{font-size:18px;font-weight:800;letter-spacing:-.2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.tb-sub{font-size:12.5px;color:rgba(255,255,255,.75);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.view{flex:1;min-height:0;overflow-y:auto;-webkit-overflow-scrolling:touch;padding:14px}
+.dock{flex:none;display:flex;gap:8px;padding:10px 12px calc(10px + var(--safe-b));background:#fff;border-top:1px solid var(--border);box-shadow:0 -2px 10px rgba(0,60,20,.06)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;min-height:50px;padding:0 16px;border-radius:11px;border:2px solid transparent;font-weight:700;line-height:1.2;user-select:none;letter-spacing:.2px;transition:transform .1s ease,box-shadow .18s ease,background .15s}
+.btn:active:not(:disabled){transform:scale(.97)}
+.btn-primary{background:linear-gradient(135deg,var(--df-green-btn),var(--df-green));color:#fff;box-shadow:0 4px 14px rgba(29,74,46,.35)}
+.btn-secondary{background:#fff;color:var(--green-dk);border-color:var(--green-m)}
+.btn-ghost{background:transparent;color:var(--red);border-color:var(--red-l)}
+.dock .btn{flex:1;padding:0 4px;font-size:15px;white-space:nowrap}
+.dock .btn-primary{flex:1.3}
+@media(hover:hover){.btn-primary:hover{transform:translateY(-1px);box-shadow:0 6px 20px rgba(29,74,46,.45)}.btn-secondary:hover{background:var(--green-l);border-color:#22a050}}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:14px;box-shadow:var(--sh);animation:cardIn .4s var(--ease) both}
+.card+.card{margin-top:12px}
+.card h2{font-size:16px;font-weight:800;color:var(--df-green);margin:0 0 12px;display:flex;align-items:center;gap:8px}
+.card h2 i{font-style:normal;width:26px;height:26px;border-radius:50%;background:var(--green-l);color:var(--green-dk);display:grid;place-items:center;font-size:14px}
+.sub{color:var(--muted);font-size:13.5px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+.field{display:block}
+.field>span,label{display:block;font-size:13.5px;color:#4a6a4a;font-weight:700;margin-bottom:5px}
+input[type=text],input[type=number],input[type=date],input:not([type]),select,textarea{width:100%;min-height:46px;padding:9px 13px;background:#f4f8f5;border:1.5px solid #c8ddc8;border-radius:10px;outline:none;transition:border-color .18s,background .18s,box-shadow .18s}
+input:focus,select:focus,textarea:focus{border-color:var(--df-green-btn);background:#fff;box-shadow:0 0 0 3px rgba(45,138,82,.14)}
+select{appearance:none;-webkit-appearance:none;padding-right:38px;font-weight:600;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='14' height='9' viewBox='0 0 14 9'><path d='M1 1l6 6 6-6' fill='none' stroke='%231a7a3c' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/></svg>");background-repeat:no-repeat;background-position:right 14px center}
+textarea{min-height:140px;font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;resize:vertical}
 .chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
-.chips button{padding:2px 10px;font-size:13px;border-radius:99px}
-.bar{display:flex;flex-wrap:wrap;gap:8px}
-.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px}
-.stat{background:#0b1f17;border:1px solid var(--line);border-radius:8px;padding:12px}
-.stat b{display:block;font-size:21px;font-variant-numeric:tabular-nums}
-.stat input{font-size:18px;text-align:right;margin-top:2px}
-.varline{display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--line);margin-top:14px;padding-top:12px;font-weight:600}.varline b{font-size:22px;font-variant-numeric:tabular-nums}
-.ok{color:var(--accent)}.bad{color:var(--bad)}
-.info{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:6px 16px;margin-bottom:12px}
-.info div span{display:block;font-size:13px;color:var(--mute)}
-.wrap{overflow-x:auto}
-table{width:100%;border-collapse:collapse;font-size:14px}
-th,td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
-th{color:var(--mute);font-weight:500}
-td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
-td input{padding:3px 6px;min-width:90px}
-tfoot td{font-weight:600;border-bottom:0}
-.empty{color:var(--mute);text-align:center;padding:16px}
-#msg{min-height:20px;font-size:13px;color:var(--warn);margin-bottom:8px}
-dialog{background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:10px;width:min(680px,92vw)}
-dialog::backdrop{background:#000a}
+.chips button{min-height:30px;padding:0 12px;border-radius:99px;border:2px solid var(--border);background:#fff;font-weight:700;font-size:13px;color:var(--muted)}
+.chips button:active{background:var(--green-l)}
+.mchips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}
+.mchips span{padding:3px 10px;border-radius:99px;background:var(--green-l);color:var(--green-dk);font-weight:700;font-size:14px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+.stat{background:#fff;border:1px solid var(--border);border-radius:var(--r);padding:10px 12px;box-shadow:var(--sh)}
+.stat b{display:block;font-size:28px;font-weight:800;line-height:1.15}
+.stat>span{font-size:14px;color:var(--muted)}
+.stat input{margin-top:2px;font-size:20px;font-weight:800;text-align:right}
+.ok{color:var(--green)}.bad{color:var(--red)}
+.adjh{margin:14px 2px 6px;font-size:15px;font-weight:800;color:var(--muted)}
+.varbox{margin-top:12px;border-radius:var(--r);padding:12px 14px;background:var(--green-l);border:1px solid var(--green-m);display:flex;justify-content:space-between;align-items:center;gap:10px}
+.varbox span{font-weight:800;color:var(--green-dk)}
+.varbox b{font-size:26px;font-weight:800}
+#sSt{margin:6px 2px 0}
+#msg{margin-bottom:12px;border-radius:var(--r);padding:10px 14px;background:var(--yellow-l);border:1px solid #ead38a;color:#6a4a00;font-weight:600;font-size:14px}
+#msg:empty{display:none}
+.toolrow{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 10px}
+.toolrow .btn{min-height:44px;flex:1;font-size:15px;white-space:nowrap}
+.tbl-wrap{overflow-x:auto;border:1px solid var(--border);border-radius:9px;background:#fff}
+table.tbl{width:100%;border-collapse:collapse;font-size:13.5px}
+.tbl th,.tbl td{padding:6px 8px;text-align:left;border-bottom:1px solid var(--border2);white-space:nowrap}
+.tbl th{background:var(--green-l);color:var(--green-dk);font-weight:700}
+.tbl td.n,.tbl th.n{text-align:right}
+.tbl td input{min-height:36px;padding:4px 8px;min-width:96px;border-radius:8px}
+.tbl tfoot td{font-weight:800;background:var(--green-l);color:var(--green-dk);border-bottom:0}
+button.del{min-height:34px;padding:0 10px;border-radius:8px;border:1.5px solid var(--red-l);background:#fff;color:var(--red);font-weight:700}
+.empty{color:var(--muted);text-align:center;padding:22px 12px}
+dialog{background:#fff;color:var(--text);border:0;border-radius:20px;width:min(680px,92vw);padding:18px;box-shadow:0 20px 60px rgba(0,0,0,.35)}
+dialog::backdrop{background:rgba(17,24,23,.5)}
+dialog h2{font-size:18px;font-weight:800;color:var(--df-green);margin-bottom:6px}
+.dlgbar{display:flex;gap:8px;margin-top:12px}
+.dlgbar .btn{flex:1;min-height:46px}
+.rbar .btn{min-height:42px}
+.rbar label{margin:0}
 #report{display:none}
 #report.show{display:block;position:fixed;inset:0;overflow:auto;background:#3a4a42;z-index:50;padding:12px}
 .rbar{display:flex;gap:12px;justify-content:center;align-items:center;margin-bottom:12px}
@@ -60,8 +96,7 @@ dialog::backdrop{background:#000a}
 .top{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;padding-bottom:10px;border-bottom:3px solid var(--g)}
 .top small{display:block;letter-spacing:.18em;font-size:10px;color:var(--g2);font-weight:600}
 .paper h1{font-size:24px;line-height:1.2;margin:2px 0 0;color:var(--g);font-weight:600}
-.pill{border:1.5px solid #111;color:#111;border-radius:99px;padding:3px 16px;font:600 14px "Prompt","Sarabun",sans-serif}
-.logo{max-height:12mm;max-width:46mm;object-fit:contain;display:block}
+.plat{background:var(--g2);color:#fff;border-radius:8px;padding:6px 18px;font:700 18px "Prompt","Sarabun",sans-serif;letter-spacing:.02em;-webkit-print-color-adjust:exact;print-color-adjust:exact;white-space:nowrap}
 .paper .info{display:grid;grid-template-columns:1fr 1.6fr 1fr;gap:8px;margin:12px 0 16px}
 .paper .info div{background:var(--gl);border-left:3px solid var(--g2);border-radius:4px;padding:5px 9px}
 .paper .info div span{display:block;font-size:10.5px;color:var(--mt)}
@@ -101,6 +136,7 @@ dialog::backdrop{background:#000a}
 .rbar label input{width:auto}
 @media print{
   @page{size:A4;margin:0}
+  html,body{height:auto!important;overflow:visible!important}
   body{background:#fff;padding:0;display:block}
   body>*{display:none!important}
   body>#report,body>#report.show{display:block!important;position:static!important;inset:auto!important;background:#fff!important;padding:0!important;overflow:visible!important;height:auto!important}
@@ -111,86 +147,81 @@ dialog::backdrop{background:#000a}
   .rt tr{break-inside:avoid}
   .rt thead{display:table-header-group}
 }
+.tb-home{flex:none;width:40px;height:40px;border:1px solid rgba(255,255,255,.25);border-radius:11px;background:rgba(255,255,255,.12);color:#fff;font-size:19px;display:grid;place-items:center;text-decoration:none;transition:background .15s,transform .1s}.tb-home:active{background:rgba(255,255,255,.3);transform:scale(.94)}@media(max-width:380px){.topbar .tb-logo{display:none}}
 </style>
 </head>
 <body>
-<header>
-  <div>
-    <h1>Marketplace Settlement & SAP Sync</h1>
-    <div class="sub">กระทบยอดเงินโอนจากมาร์เก็ตเพลสกับยอดขายใน SAP</div>
-  </div>
-  <div class="bar noprint">
-    <button class="pri" id="btnXlsx">ส่งออก Excel</button>
-    <button id="btnPrint">ดูตัวอย่าง / พิมพ์</button>
-  </div>
-</header>
-<div id="msg" role="status"></div>
+<div id="app">
+  <header class="topbar">
+    <a class="tb-home" href="https://suphatsonw-glitch.github.io/homepage/" aria-label="กลับหน้าโฮม" title="กลับหน้าโฮม">🏠</a>
+    <div class="tb-logo" aria-hidden="true">🧾</div>
+    <div class="tb-text"><div class="tb-title">Marketplace Settlement</div><div class="tb-sub">กระทบยอดเงินโอนกับยอดขาย SAP</div></div>
+  </header>
+  <main class="view">
+    <div id="msg" role="status"></div>
 
-<section>
-  <h2>1. ข้อมูลการถอนเงินจากระบบ</h2>
-  <div class="row">
-    <div><label for="ch">ช่องทางขาย</label>
-      <select id="ch"><option>Shopee</option><option>Lazada</option><option>Line Shopping</option><option>TikTok</option></select>
-      <div class="chips noprint"><button type="button" id="lgBtn">โลโก้ช่องทางนี้</button><button type="button" id="lgDel" hidden>ลบโลโก้</button><img id="lgPrev" alt="" style="height:22px;display:none"></div>
-      <input type="file" id="lgFile" accept="image/*" hidden></div>
-    <div><label for="d1">วันที่เริ่ม</label><input type="date" id="d1"></div>
-    <div><label for="d2">วันที่สิ้นสุด</label><input type="date" id="d2"></div>
-    <div><label for="by">ผู้จัดทำ</label><input id="by" autocomplete="off">
-      <div class="chips noprint" id="recent"></div></div>
-  </div>
-</section>
+    <section class="card">
+      <h2><i>1</i>ข้อมูลการถอนเงินจากระบบ</h2>
+      <div class="grid">
+        <div class="field"><label for="ch">ช่องทางขาย</label>
+          <select id="ch"><option>Shopee</option><option>Lazada</option><option>Line Shopping</option><option>TikTok</option></select>
+</div>
+        <div class="field"><label for="d1">วันที่เริ่ม</label><input type="date" id="d1"></div>
+        <div class="field"><label for="d2">วันที่สิ้นสุด</label><input type="date" id="d2"></div>
+        <div class="field"><label for="by">ผู้จัดทำ</label><input type="text" id="by" autocomplete="off" placeholder="ชื่อผู้จัดทำ">
+          <div class="chips" id="recent"></div></div>
+      </div>
+    </section>
 
-<section>
-  <h2>2. สรุปผลการกระทบยอด (Reconciliation)</h2>
-  <div class="info">
-    <div><span>ช่องทางขาย</span><b id="iCh"></b></div>
-    <div><span>ช่วงวันที่</span><b id="iDt"></b></div>
-    <div><span>ผู้จัดทำ</span><b id="iBy"></b></div>
-    <div><span>ข้ามรายการยกเลิก / ซ้ำ</span><b id="iSkip"></b></div>
-  </div>
-  <div class="stats">
-    <div class="stat"><span class="sub">ยอดขายรวม (SAP)</span><b id="sSap">฿0.00</b></div>
-    <div class="stat"><label for="net" style="margin:0">เงินโอนเข้าบัญชีสุทธิ (บาท)</label><input type="number" step="0.01" id="net" inputmode="decimal" placeholder="0.00"></div>
-  </div>
-  <div class="sub" style="margin:12px 0 6px">รายการหักและปรับปรุง (บาท)</div>
-  <div class="row adj">
-    <input type="number" step="0.01" id="fee" placeholder="ค่าธรรมเนียม" aria-label="ค่าธรรมเนียม" inputmode="decimal">
-    <input type="number" step="0.01" id="ship" placeholder="ค่าขนส่ง" aria-label="ค่าขนส่ง" inputmode="decimal">
-    <input type="number" step="0.01" id="miss" placeholder="รายการขาดส่ง" aria-label="รายการขาดส่ง" inputmode="decimal">
-    <input type="number" step="0.01" id="claim" placeholder="รายการเคลม" aria-label="รายการเคลม" inputmode="decimal">
-    <input type="number" step="0.01" id="oth" placeholder="อื่นๆ" aria-label="อื่นๆ" inputmode="decimal">
-  </div>
-  <div class="varline"><span>ส่วนต่างสะสม (Variance):</span><b id="sVar">฿0.00</b></div>
-  <div class="sub" id="sSt"></div>
-</section>
+    <section class="card">
+      <h2><i>2</i>สรุปผลการกระทบยอด (Reconciliation)</h2>
+      <div class="mchips"><span id="iCh"></span><span id="iDt"></span><span id="iBy"></span><span id="iSkip"></span></div>
+      <div class="stats">
+        <div class="stat"><span>ยอดขายรวม (SAP)</span><b id="sSap">฿0.00</b></div>
+        <div class="stat"><label for="net" style="margin:0;font-weight:400;color:var(--muted);font-size:14px">เงินโอนเข้าบัญชีสุทธิ (บาท)</label><input type="number" step="0.01" id="net" inputmode="decimal" placeholder="0.00"></div>
+      </div>
+      <div class="adjh">รายการหักและปรับปรุง (บาท)</div>
+      <div class="grid">
+        <input type="number" step="0.01" id="fee" placeholder="ค่าธรรมเนียม" aria-label="ค่าธรรมเนียม" inputmode="decimal">
+        <input type="number" step="0.01" id="ship" placeholder="ค่าขนส่ง" aria-label="ค่าขนส่ง" inputmode="decimal">
+        <input type="number" step="0.01" id="miss" placeholder="รายการขาดส่ง" aria-label="รายการขาดส่ง" inputmode="decimal">
+        <input type="number" step="0.01" id="claim" placeholder="รายการเคลม" aria-label="รายการเคลม" inputmode="decimal">
+        <input type="number" step="0.01" id="oth" placeholder="อื่นๆ" aria-label="อื่นๆ" inputmode="decimal">
+      </div>
+      <div class="varbox"><span>ส่วนต่างสะสม (Variance)</span><b id="sVar">฿0.00</b></div>
+      <div class="sub" id="sSt"></div>
+    </section>
 
-<section>
-  <h2>3. ตารางรายการข้อมูลขายจาก SAP</h2>
-  <div class="bar noprint" style="margin-bottom:10px">
-    <button class="pri" id="imp">นำเข้าข้อมูลจาก SAP</button>
-    <button id="addS">+ เพิ่มรายการด้วยมือ</button>
-    <button id="clr">ล้างทั้งหมด</button>
-  </div>
-  <div class="wrap"><table>
-    <thead><tr><th>ลำดับ</th><th>IV NO.</th><th>SO NO.</th><th>ORDER NO.</th><th>POSTING DATE</th><th>CUST CODE</th><th>CUST NAME</th><th class="n">ยอดรวม (บาท)</th><th class="noprint"></th></tr></thead>
-    <tbody id="sBody"></tbody>
-    <tfoot><tr><td colspan="7">รวม</td><td class="n" id="fTot">฿0.00</td><td class="noprint"></td></tr></tfoot>
-  </table></div>
-</section>
+    <section class="card">
+      <h2><i>3</i>ตารางรายการข้อมูลขายจาก SAP</h2>
+      <div class="toolrow">
+        <button class="btn btn-primary" id="imp">📥 นำเข้าจาก SAP</button>
+        <button class="btn btn-secondary" id="addS">+ เพิ่มด้วยมือ</button>
+        <button class="btn btn-ghost" id="clr">ล้างทั้งหมด</button>
+      </div>
+      <div class="tbl-wrap"><table class="tbl">
+        <thead><tr><th>ลำดับ</th><th>IV NO.</th><th>SO NO.</th><th>ORDER NO.</th><th>POSTING DATE</th><th>CUST CODE</th><th>CUST NAME</th><th class="n">ยอดรวม (บาท)</th><th></th></tr></thead>
+        <tbody id="sBody"></tbody>
+        <tfoot><tr><td colspan="7">รวม</td><td class="n" id="fTot">฿0.00</td><td></td></tr></tfoot>
+      </table></div>
+    </section>
+  </main>
+  <footer class="dock">
+    <button class="btn btn-secondary" id="btnXlsx">📊 ส่งออก Excel</button>
+    <button class="btn btn-primary" id="btnPrint">🖨 ดูตัวอย่าง / พิมพ์</button>
+  </footer>
+</div>
 
 <div id="report" aria-label="ตัวอย่างรายงาน">
-  <div class="rbar"><button class="pri" id="rPrint">พิมพ์</button><label><input type="checkbox" id="rList" checked>แสดงรายการ SAP</label><button id="rClose">ปิด</button></div>
+  <div class="rbar"><button class="btn btn-primary" id="rPrint">พิมพ์</button><label><input type="checkbox" id="rList" checked>แสดงรายการ SAP</label><button class="btn btn-secondary" id="rClose">ปิด</button></div>
   <div class="paper" id="paper"></div>
 </div>
 
 <dialog id="dlg">
   <h2>วางข้อมูลจาก SAP</h2>
-  <p class="sub">คัดลอกจาก Excel/SAP พร้อมแถวหัวคอลัมน์ ระบบจับคู่ตามชื่อคอลัมน์ ไม่ต้องเรียงลำดับ<br>
-  ORDER NO. ← BP Reference No. · ยอดรวม ← Document Total · รายการที่ Canceled เป็น Y จะถูกข้าม</p>
+  <p class="sub">คัดลอกจาก Excel/SAP พร้อมแถวหัวคอลัมน์ ระบบจับคู่ตามชื่อคอลัมน์ ไม่ต้องเรียงลำดับ<br>ORDER NO. ← BP Reference No. · ยอดรวม ← Document Total · รายการที่ Canceled เป็น Y จะถูกข้าม</p>
   <textarea id="paste" rows="8" placeholder="วางข้อมูลที่นี่"></textarea>
-  <div class="bar" style="margin-top:10px;justify-content:flex-end">
-    <button id="dlgNo">ยกเลิก</button><button class="pri" id="dlgOk">นำเข้า</button>
-  </div>
+  <div class="dlgbar"><button class="btn btn-secondary" id="dlgNo">ยกเลิก</button><button class="btn btn-primary" id="dlgOk">นำเข้า</button></div>
 </dialog>
 
 <script>
@@ -198,12 +229,11 @@ const $=id=>document.getElementById(id);
 const fmt=n=>'฿'+Number(n||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const ADJ=[['fee','fee'],['ship','ship'],['miss','miss'],['claim','claim'],['oth','oth']];
-let S=[],R={skipped:0},recent=[],logos={};
+let S=[],R={skipped:0},recent=[];
 try{
   S=JSON.parse(localStorage.getItem('ms_s')||'[]');
   R=Object.assign(R,JSON.parse(localStorage.getItem('ms_r')||'{}'));
   recent=JSON.parse(localStorage.getItem('ms_recent')||'[]');
-  logos=JSON.parse(localStorage.getItem('ms_logos')||'{}');
 }catch(e){}
 $('ch').value=R.channel||'Shopee';$('d1').value=R.from||'';$('d2').value=R.to||'';$('by').value=R.by||(recent[0]||'');$('net').value=R.net??'';ADJ.forEach(([k,id])=>$(id).value=R[k]??'');
 function save(){
@@ -220,19 +250,8 @@ function chips(){
 }
 $('recent').onclick=e=>{const n=e.target.dataset.r;if(n){$('by').value=n;remember();sum()}};
 $('by').onchange=()=>{remember();sum()};
-['ch','d1','d2'].forEach(i=>$(i).onchange=()=>{sum();logoUi()});
-function logoUi(){const l=logos[$('ch').value];$('lgPrev').style.display=l?'inline-block':'none';if(l)$('lgPrev').src=l;$('lgDel').hidden=!l;$('lgBtn').textContent=l?'เปลี่ยนโลโก้':'โลโก้ช่องทางนี้'}
-function saveLogos(){try{localStorage.setItem('ms_logos',JSON.stringify(logos))}catch(e){say('บันทึกโลโก้ไม่สำเร็จ')}}
-$('lgBtn').onclick=()=>$('lgFile').click();
-$('lgDel').onclick=()=>{delete logos[$('ch').value];saveLogos();logoUi()};
-$('lgFile').onchange=e=>{
-  const f=e.target.files[0];if(!f)return;
-  const img=new Image(),u=URL.createObjectURL(f);
-  img.onload=()=>{const k=Math.min(1,400/img.width,160/img.height),c=document.createElement('canvas');
-    c.width=Math.round(img.width*k);c.height=Math.round(img.height*k);c.getContext('2d').drawImage(img,0,0,c.width,c.height);
-    logos[$('ch').value]=c.toDataURL('image/png');saveLogos();logoUi();URL.revokeObjectURL(u);e.target.value=''};
-  img.onerror=()=>say('เปิดไฟล์รูปไม่ได้');img.src=u;
-};
+['ch','d1','d2'].forEach(i=>$(i).onchange=()=>{sum()});
+try{localStorage.removeItem('ms_logos')}catch(e){}
 ['net','fee','ship','miss','claim','oth'].forEach(i=>$(i).oninput=sum);
 const num=id=>parseFloat($(id).value)||0;
 const calc=()=>{const sap=S.reduce((a,r)=>a+(+r.total||0),0);const net=num('net'),adj=num('fee')+num('ship')+num('miss')+num('claim')+num('oth');return{sap,net,adj,v:sap-net-adj}};
@@ -246,7 +265,7 @@ function render(){
     <td><input data-s="${i}" data-k="code" value="${esc(r.code)}"></td>
     <td><input data-s="${i}" data-k="name" value="${esc(r.name)}"></td>
     <td class="n"><input data-s="${i}" data-k="total" type="number" step="0.01" value="${r.total}" style="text-align:right"></td>
-    <td class="noprint"><button class="del" data-sd="${i}" aria-label="ลบ">ลบ</button></td></tr>`).join('')
+    <td ><button class="del" data-sd="${i}" aria-label="ลบ">ลบ</button></td></tr>`).join('')
     :'<tr><td colspan="9" class="empty">ยังไม่มีข้อมูล กด “นำเข้าข้อมูลจาก SAP” เพื่อวางข้อมูล</td></tr>';
   sum();
 }
@@ -257,10 +276,10 @@ function sum(){
   $('sVar').textContent=fmt(v);
   $('sVar').className=!touched?'':Math.abs(v)<0.005?'ok':'bad';
   $('sSt').textContent=!touched?'':Math.abs(v)<0.005?'ยอดตรงกัน':(v>0?'SAP สูงกว่าเงินโอนและรายการหัก':'เงินโอนและรายการหักสูงกว่า SAP')+' · ส่วนต่าง = SAP − เงินโอน − รายการหักทั้งหมด';
-  $('iCh').textContent=$('ch').value;
-  $('iDt').textContent=($('d1').value||'-')+' ถึง '+($('d2').value||'-');
-  $('iBy').textContent=$('by').value.trim()||'-';
-  $('iSkip').textContent=(R.skipped||0)+' รายการ';
+  $('iCh').textContent='📦 '+$('ch').value;
+  $('iDt').textContent='📅 '+($('d1').value||'-')+' ถึง '+($('d2').value||'-');
+  $('iBy').textContent='👤 '+($('by').value.trim()||'-');
+  $('iSkip').textContent='ข้ามยกเลิก/ซ้ำ '+(R.skipped||0)+' รายการ';
   save();
 }
 document.addEventListener('click',e=>{
@@ -282,8 +301,8 @@ const ALIAS={
   so:['sono','salesorderno','salesorder'],
   order:['bpreferenceno','bpreferencenumber','bpref','numatcard'],
   date:['postingdate'],
-  code:['customercode','customersupplierno','bpcode','cardcode'],
-  name:['customername','customersuppliername','bpname','cardname'],
+  code:['customervendorcode','customercode','customersuppliercode','customersupplierno','customervendorno','bpcode','cardcode'],
+  name:['customervendorname','customername','customersuppliername','bpname','cardname'],
   total:['documenttotal','doctotal'],
   canceled:['canceled','cancelled']
 };
@@ -298,7 +317,8 @@ $('dlgOk').onclick=()=>{
   }
   if(hi<0){say('ไม่พบแถวหัวคอลัมน์ กรุณาคัดลอกพร้อมหัวคอลัมน์ (เช่น IV No., BP Reference No., Document Total)');$('dlg').close();return}
   if(map.total===undefined){say('ไม่พบคอลัมน์ Document Total');$('dlg').close();return}
-  const missing=['order'].filter(k=>map[k]===undefined);
+  const LBL={order:'BP Reference No.',code:'Customer/Vendor Code',name:'Customer/Vendor Name'};
+  const missing=Object.keys(LBL).filter(k=>map[k]===undefined).map(k=>LBL[k]);
   const seen=new Set(S.map(r=>r.iv).filter(Boolean));
   let n=0,canc=0,dup=0;
   lines.slice(hi+1).forEach(l=>{
@@ -314,7 +334,7 @@ $('dlgOk').onclick=()=>{
   });
   R.skipped=(R.skipped||0)+canc+dup;
   $('dlg').close();render();
-  say('นำเข้า '+n+' รายการ'+(canc?' · ข้ามยกเลิก '+canc:'')+(dup?' · ข้ามซ้ำ '+dup:'')+(missing.length?' · ไม่พบคอลัมน์ BP Reference No.':''));
+  say('นำเข้า '+n+' รายการ'+(canc?' · ข้ามยกเลิก '+canc:'')+(dup?' · ข้ามซ้ำ '+dup:'')+(missing.length?' · ไม่พบคอลัมน์ '+missing.join(', '):''));
 };
 
 // ---- พิมพ์ / Excel ----
@@ -325,8 +345,7 @@ function buildReport(){
   const now=new Date().toLocaleString('th-TH');
   const showList=$('rList').checked;
   const dn=S.length>22?' dn':'';
-  const lg=logos[$('ch').value];
-  const logoHtml=lg?`<img class="logo" src="${lg}" alt="${ch}">`:`<span class="pill">${ch}</span>`;
+  const logoHtml=`<span class="plat">${ch}</span>`;
   const row=(l,x,c='')=>`<tr class="${c}"><td>${l}</td><td class="n">${fmt(x)}</td></tr>`;
   $('paper').innerHTML=`<table class="frame">
   <thead><tr><td class="sp"></td></tr></thead>
@@ -373,7 +392,7 @@ $('btnXlsx').onclick=()=>{
   XLSX.writeFile(wb,'settlement_'+$('ch').value+'_'+new Date().toISOString().slice(0,10)+'.xlsx');
 };
 
-chips();logoUi();render();
+chips();render();
 </script>
 </body>
 </html>
