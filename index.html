@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Marketplace Settlement & SAP Sync</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&family=Sarabun:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0b1f17;--card:#133024;--line:#24503b;--ink:#e6f3ea;--mute:#8fb5a0;--accent:#4ade80;--accent-ink:#06210f;--bad:#f87171;--warn:#fbbf24;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 "Noto Sans Thai","Sarabun",system-ui,sans-serif;padding:16px;max-width:1100px;margin-inline:auto}
+header{display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;align-items:center;margin-bottom:8px}
+h1{font-size:22px;margin:0}
+h2{font-size:17px;margin:0 0 12px}
+.sub{color:var(--mute);font-size:13px}
+section{background:var(--card);border:1px solid var(--line);border-radius:10px;padding:16px;margin-bottom:16px}
+.row{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:10px;align-items:start}
+label{display:block;font-size:13px;color:var(--mute);margin-bottom:3px}
+input,select,textarea{width:100%;background:#0b1f17;color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:8px 10px;font:inherit}
+input:focus,select:focus,textarea:focus,button:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+button{background:#1c4733;color:var(--ink);border:1px solid var(--line);border-radius:6px;padding:8px 14px;font:inherit;cursor:pointer}
+button:hover{background:#235a3f}
+button.pri{background:var(--accent);color:var(--accent-ink);border-color:var(--accent);font-weight:600}
+button.pri:hover{background:#6ee79a}
+button.del{padding:2px 8px;color:var(--bad)}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:6px}
+.chips button{padding:2px 10px;font-size:13px;border-radius:99px}
+.bar{display:flex;flex-wrap:wrap;gap:8px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:10px}
+.stat{background:#0b1f17;border:1px solid var(--line);border-radius:8px;padding:12px}
+.stat b{display:block;font-size:21px;font-variant-numeric:tabular-nums}
+.stat input{font-size:18px;text-align:right;margin-top:2px}
+.varline{display:flex;justify-content:space-between;align-items:center;border-top:1px solid var(--line);margin-top:14px;padding-top:12px;font-weight:600}.varline b{font-size:22px;font-variant-numeric:tabular-nums}
+.ok{color:var(--accent)}.bad{color:var(--bad)}
+.info{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:6px 16px;margin-bottom:12px}
+.info div span{display:block;font-size:13px;color:var(--mute)}
+.wrap{overflow-x:auto}
+table{width:100%;border-collapse:collapse;font-size:14px}
+th,td{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+th{color:var(--mute);font-weight:500}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+td input{padding:3px 6px;min-width:90px}
+tfoot td{font-weight:600;border-bottom:0}
+.empty{color:var(--mute);text-align:center;padding:16px}
+#msg{min-height:20px;font-size:13px;color:var(--warn);margin-bottom:8px}
+dialog{background:var(--card);color:var(--ink);border:1px solid var(--line);border-radius:10px;width:min(680px,92vw)}
+dialog::backdrop{background:#000a}
+#report{display:none}
+#report.show{display:block;position:fixed;inset:0;overflow:auto;background:#3a4a42;z-index:50;padding:12px}
+.rbar{display:flex;gap:12px;justify-content:center;align-items:center;margin-bottom:12px}
+.paper{--th:#0a4d2a;--g:#111;--g2:#1f7a4a;--gl:#eaf4ee;--gm:#c9e2d3;--gz:#f4faf6;--bd:#d5e4da;--mt:#5b7566;background:#fff;color:#14231b;font-family:"Sarabun","Noto Sans Thai",Tahoma,sans-serif;font-size:12.5px;line-height:1.45;width:210mm;max-width:100%;margin:0 auto 14px;box-shadow:0 2px 14px #0007;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+.paper h1,.paper h2,.paper .hd,.paper th{font-family:"Prompt","Sarabun","Noto Sans Thai",sans-serif}
+.frame{width:100%;border-collapse:collapse}
+.frame>thead>tr>td,.frame>tfoot>tr>td,.frame>tbody>tr>td{border:0!important;padding:0!important;background:none!important}
+.frame .sp{height:13mm}
+.frame .bd{padding:0 15mm!important}
+.pf{display:flex;justify-content:space-between;padding:0 15mm;font-size:10.5px;color:var(--mt)}
+@media print,(min-width:900px){.content{min-height:255mm;display:flex;flex-direction:column}}
+.top{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;padding-bottom:10px;border-bottom:3px solid var(--g)}
+.top small{display:block;letter-spacing:.18em;font-size:10px;color:var(--g2);font-weight:600}
+.paper h1{font-size:24px;line-height:1.2;margin:2px 0 0;color:var(--g);font-weight:600}
+.pill{border:1.5px solid #111;color:#111;border-radius:99px;padding:3px 16px;font:600 14px "Prompt","Sarabun",sans-serif}
+.logo{max-height:12mm;max-width:46mm;object-fit:contain;display:block}
+.paper .info{display:grid;grid-template-columns:1fr 1.6fr 1fr;gap:8px;margin:12px 0 16px}
+.paper .info div{background:var(--gl);border-left:3px solid var(--g2);border-radius:4px;padding:5px 9px}
+.paper .info div span{display:block;font-size:10.5px;color:var(--mt)}
+.paper .info b{font-size:12.5px}
+.hd{font-size:14px;font-weight:600;color:var(--g);margin:0 0 7px;display:flex;align-items:center;gap:7px}
+.hd:before{content:"";width:4px;height:15px;background:var(--g2);border-radius:2px}
+.sum{display:grid;grid-template-columns:1.7fr 1fr;gap:12px;margin-bottom:16px;align-items:stretch}
+.vc{background:linear-gradient(160deg,#093a20,#1f7a4a);color:#fff;border-radius:10px;padding:12px 14px;display:flex;flex-direction:column;justify-content:center;text-align:center}
+.vc.bad{background:linear-gradient(160deg,#7a1c12,#c0392b)}
+.vc span{font-size:11px;opacity:.85}
+.vc b{font:600 24px "Prompt","Sarabun",sans-serif;margin:2px 0 6px;font-variant-numeric:tabular-nums}
+.vc em{font-style:normal;background:#fff;color:var(--g);border-radius:99px;font-size:11.5px;font-weight:700;padding:1px 12px;align-self:center}
+.vc.bad em{color:#9b2417}
+.vc small{display:block;margin-top:8px;font-size:10.5px;opacity:.8}
+.sm{display:grid;gap:8px;margin-bottom:18px}
+.sm .r1{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.sm .r2{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.sc{border:1px solid var(--bd);background:var(--gz);border-left:4px solid var(--g2);border-radius:8px;padding:8px 12px}
+.sc span{display:block;font-size:10.5px;color:var(--mt)}
+.sc b{font:600 14px "Prompt","Sarabun",sans-serif;font-variant-numeric:tabular-nums}
+.sm .r1 .sc{padding:10px 14px}.sm .r1 .sc b{font-size:20px}
+.paper table.rt{width:100%;border-collapse:collapse;font-size:11.5px}
+.rt th{background:var(--th);color:#fff;padding:5px 8px;text-align:left;font-weight:500}
+.rt td{border-bottom:1px solid var(--bd);padding:4px 8px;white-space:normal}
+.rt tbody tr:nth-child(even) td{background:var(--gz)}
+.rt .n{text-align:right;font-variant-numeric:tabular-nums}
+.rt tr.sb td{font-weight:700;background:var(--gl)!important}
+.rt tr.tot td{font-weight:700;background:var(--gm)!important;border-bottom:0}
+.rt.dn td{padding:2px 6px;font-size:10px}
+.rt.dn th{padding:3px 6px;font-size:10px}
+.sign{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin-top:auto;padding-top:22px;break-inside:avoid}
+.sign div{height:26mm;border:1px solid var(--gm);border-radius:8px;padding:6px 10px;display:flex;flex-direction:column;justify-content:flex-end;text-align:center;font-size:11.5px}
+.sign div b{border-top:1px solid #14231b;padding-top:3px;margin-top:5px;font-weight:600}
+.sign div small{color:#5b7566;font-size:10.5px}
+.note{color:#5b7566;font-size:10.5px;margin:6px 0 0}
+.rbar label{display:inline-flex;align-items:center;gap:6px;color:#fff;font-size:13px}
+.rbar label input{width:auto}
+@media print{
+  @page{size:A4;margin:0}
+  body{background:#fff;padding:0;display:block}
+  body>*{display:none!important}
+  body>#report,body>#report.show{display:block!important;position:static!important;inset:auto!important;background:#fff!important;padding:0!important;overflow:visible!important;height:auto!important}
+  #report .rbar{display:none}
+  .paper{width:100%;margin:0;box-shadow:none}
+  .frame>thead{display:table-header-group}
+  .frame>tfoot{display:table-footer-group}
+  .rt tr{break-inside:avoid}
+  .rt thead{display:table-header-group}
+}
+</style>
+</head>
+<body>
+<header>
+  <div>
+    <h1>Marketplace Settlement & SAP Sync</h1>
+    <div class="sub">กระทบยอดเงินโอนจากมาร์เก็ตเพลสกับยอดขายใน SAP</div>
+  </div>
+  <div class="bar noprint">
+    <button class="pri" id="btnXlsx">ส่งออก Excel</button>
+    <button id="btnPrint">ดูตัวอย่าง / พิมพ์</button>
+  </div>
+</header>
+<div id="msg" role="status"></div>
+
+<section>
+  <h2>1. ข้อมูลการถอนเงินจากระบบ</h2>
+  <div class="row">
+    <div><label for="ch">ช่องทางขาย</label>
+      <select id="ch"><option>Shopee</option><option>Lazada</option><option>Line Shopping</option><option>TikTok</option></select>
+      <div class="chips noprint"><button type="button" id="lgBtn">โลโก้ช่องทางนี้</button><button type="button" id="lgDel" hidden>ลบโลโก้</button><img id="lgPrev" alt="" style="height:22px;display:none"></div>
+      <input type="file" id="lgFile" accept="image/*" hidden></div>
+    <div><label for="d1">วันที่เริ่ม</label><input type="date" id="d1"></div>
+    <div><label for="d2">วันที่สิ้นสุด</label><input type="date" id="d2"></div>
+    <div><label for="by">ผู้จัดทำ</label><input id="by" autocomplete="off">
+      <div class="chips noprint" id="recent"></div></div>
+  </div>
+</section>
+
+<section>
+  <h2>2. สรุปผลการกระทบยอด (Reconciliation)</h2>
+  <div class="info">
+    <div><span>ช่องทางขาย</span><b id="iCh"></b></div>
+    <div><span>ช่วงวันที่</span><b id="iDt"></b></div>
+    <div><span>ผู้จัดทำ</span><b id="iBy"></b></div>
+    <div><span>ข้ามรายการยกเลิก / ซ้ำ</span><b id="iSkip"></b></div>
+  </div>
+  <div class="stats">
+    <div class="stat"><span class="sub">ยอดขายรวม (SAP)</span><b id="sSap">฿0.00</b></div>
+    <div class="stat"><label for="net" style="margin:0">เงินโอนเข้าบัญชีสุทธิ (บาท)</label><input type="number" step="0.01" id="net" inputmode="decimal" placeholder="0.00"></div>
+  </div>
+  <div class="sub" style="margin:12px 0 6px">รายการหักและปรับปรุง (บาท)</div>
+  <div class="row adj">
+    <input type="number" step="0.01" id="fee" placeholder="ค่าธรรมเนียม" aria-label="ค่าธรรมเนียม" inputmode="decimal">
+    <input type="number" step="0.01" id="ship" placeholder="ค่าขนส่ง" aria-label="ค่าขนส่ง" inputmode="decimal">
+    <input type="number" step="0.01" id="miss" placeholder="รายการขาดส่ง" aria-label="รายการขาดส่ง" inputmode="decimal">
+    <input type="number" step="0.01" id="claim" placeholder="รายการเคลม" aria-label="รายการเคลม" inputmode="decimal">
+    <input type="number" step="0.01" id="oth" placeholder="อื่นๆ" aria-label="อื่นๆ" inputmode="decimal">
+  </div>
+  <div class="varline"><span>ส่วนต่างสะสม (Variance):</span><b id="sVar">฿0.00</b></div>
+  <div class="sub" id="sSt"></div>
+</section>
+
+<section>
+  <h2>3. ตารางรายการข้อมูลขายจาก SAP</h2>
+  <div class="bar noprint" style="margin-bottom:10px">
+    <button class="pri" id="imp">นำเข้าข้อมูลจาก SAP</button>
+    <button id="addS">+ เพิ่มรายการด้วยมือ</button>
+    <button id="clr">ล้างทั้งหมด</button>
+  </div>
+  <div class="wrap"><table>
+    <thead><tr><th>ลำดับ</th><th>IV NO.</th><th>SO NO.</th><th>ORDER NO.</th><th>POSTING DATE</th><th>CUST CODE</th><th>CUST NAME</th><th class="n">ยอดรวม (บาท)</th><th class="noprint"></th></tr></thead>
+    <tbody id="sBody"></tbody>
+    <tfoot><tr><td colspan="7">รวม</td><td class="n" id="fTot">฿0.00</td><td class="noprint"></td></tr></tfoot>
+  </table></div>
+</section>
+
+<div id="report" aria-label="ตัวอย่างรายงาน">
+  <div class="rbar"><button class="pri" id="rPrint">พิมพ์</button><label><input type="checkbox" id="rList" checked>แสดงรายการ SAP</label><button id="rClose">ปิด</button></div>
+  <div class="paper" id="paper"></div>
+</div>
+
+<dialog id="dlg">
+  <h2>วางข้อมูลจาก SAP</h2>
+  <p class="sub">คัดลอกจาก Excel/SAP พร้อมแถวหัวคอลัมน์ ระบบจับคู่ตามชื่อคอลัมน์ ไม่ต้องเรียงลำดับ<br>
+  ORDER NO. ← BP Reference No. · ยอดรวม ← Document Total · รายการที่ Canceled เป็น Y จะถูกข้าม</p>
+  <textarea id="paste" rows="8" placeholder="วางข้อมูลที่นี่"></textarea>
+  <div class="bar" style="margin-top:10px;justify-content:flex-end">
+    <button id="dlgNo">ยกเลิก</button><button class="pri" id="dlgOk">นำเข้า</button>
+  </div>
+</dialog>
+
+<script>
+const $=id=>document.getElementById(id);
+const fmt=n=>'฿'+Number(n||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const ADJ=[['fee','fee'],['ship','ship'],['miss','miss'],['claim','claim'],['oth','oth']];
+let S=[],R={skipped:0},recent=[],logos={};
+try{
+  S=JSON.parse(localStorage.getItem('ms_s')||'[]');
+  R=Object.assign(R,JSON.parse(localStorage.getItem('ms_r')||'{}'));
+  recent=JSON.parse(localStorage.getItem('ms_recent')||'[]');
+  logos=JSON.parse(localStorage.getItem('ms_logos')||'{}');
+}catch(e){}
+$('ch').value=R.channel||'Shopee';$('d1').value=R.from||'';$('d2').value=R.to||'';$('by').value=R.by||(recent[0]||'');$('net').value=R.net??'';ADJ.forEach(([k,id])=>$(id).value=R[k]??'');
+function save(){
+  R={channel:$('ch').value,from:$('d1').value,to:$('d2').value,by:$('by').value.trim(),net:$('net').value,fee:$('fee').value,ship:$('ship').value,miss:$('miss').value,claim:$('claim').value,oth:$('oth').value,skipped:R.skipped||0};
+  try{localStorage.setItem('ms_s',JSON.stringify(S));localStorage.setItem('ms_r',JSON.stringify(R));localStorage.setItem('ms_recent',JSON.stringify(recent))}catch(e){}
+}
+function say(t){$('msg').textContent=t}
+function remember(){
+  const n=$('by').value.trim();if(!n)return;
+  recent=[n,...recent.filter(x=>x!==n)].slice(0,3);save();chips();
+}
+function chips(){
+  $('recent').innerHTML=recent.map(n=>`<button type="button" data-r="${esc(n)}">${esc(n)}</button>`).join('');
+}
+$('recent').onclick=e=>{const n=e.target.dataset.r;if(n){$('by').value=n;remember();sum()}};
+$('by').onchange=()=>{remember();sum()};
+['ch','d1','d2'].forEach(i=>$(i).onchange=()=>{sum();logoUi()});
+function logoUi(){const l=logos[$('ch').value];$('lgPrev').style.display=l?'inline-block':'none';if(l)$('lgPrev').src=l;$('lgDel').hidden=!l;$('lgBtn').textContent=l?'เปลี่ยนโลโก้':'โลโก้ช่องทางนี้'}
+function saveLogos(){try{localStorage.setItem('ms_logos',JSON.stringify(logos))}catch(e){say('บันทึกโลโก้ไม่สำเร็จ')}}
+$('lgBtn').onclick=()=>$('lgFile').click();
+$('lgDel').onclick=()=>{delete logos[$('ch').value];saveLogos();logoUi()};
+$('lgFile').onchange=e=>{
+  const f=e.target.files[0];if(!f)return;
+  const img=new Image(),u=URL.createObjectURL(f);
+  img.onload=()=>{const k=Math.min(1,400/img.width,160/img.height),c=document.createElement('canvas');
+    c.width=Math.round(img.width*k);c.height=Math.round(img.height*k);c.getContext('2d').drawImage(img,0,0,c.width,c.height);
+    logos[$('ch').value]=c.toDataURL('image/png');saveLogos();logoUi();URL.revokeObjectURL(u);e.target.value=''};
+  img.onerror=()=>say('เปิดไฟล์รูปไม่ได้');img.src=u;
+};
+['net','fee','ship','miss','claim','oth'].forEach(i=>$(i).oninput=sum);
+const num=id=>parseFloat($(id).value)||0;
+const calc=()=>{const sap=S.reduce((a,r)=>a+(+r.total||0),0);const net=num('net'),adj=num('fee')+num('ship')+num('miss')+num('claim')+num('oth');return{sap,net,adj,v:sap-net-adj}};
+
+function render(){
+  $('sBody').innerHTML=S.length?S.map((r,i)=>`<tr><td>${i+1}</td>
+    <td><input data-s="${i}" data-k="iv" value="${esc(r.iv)}"></td>
+    <td><input data-s="${i}" data-k="so" value="${esc(r.so)}"></td>
+    <td><input data-s="${i}" data-k="order" value="${esc(r.order)}"></td>
+    <td><input data-s="${i}" data-k="date" value="${esc(r.date)}"></td>
+    <td><input data-s="${i}" data-k="code" value="${esc(r.code)}"></td>
+    <td><input data-s="${i}" data-k="name" value="${esc(r.name)}"></td>
+    <td class="n"><input data-s="${i}" data-k="total" type="number" step="0.01" value="${r.total}" style="text-align:right"></td>
+    <td class="noprint"><button class="del" data-sd="${i}" aria-label="ลบ">ลบ</button></td></tr>`).join('')
+    :'<tr><td colspan="9" class="empty">ยังไม่มีข้อมูล กด “นำเข้าข้อมูลจาก SAP” เพื่อวางข้อมูล</td></tr>';
+  sum();
+}
+function sum(){
+  const {sap,net,adj,v}=calc();
+  const touched=S.length||net||adj;
+  $('sSap').textContent=fmt(sap);$('fTot').textContent=fmt(sap);
+  $('sVar').textContent=fmt(v);
+  $('sVar').className=!touched?'':Math.abs(v)<0.005?'ok':'bad';
+  $('sSt').textContent=!touched?'':Math.abs(v)<0.005?'ยอดตรงกัน':(v>0?'SAP สูงกว่าเงินโอนและรายการหัก':'เงินโอนและรายการหักสูงกว่า SAP')+' · ส่วนต่าง = SAP − เงินโอน − รายการหักทั้งหมด';
+  $('iCh').textContent=$('ch').value;
+  $('iDt').textContent=($('d1').value||'-')+' ถึง '+($('d2').value||'-');
+  $('iBy').textContent=$('by').value.trim()||'-';
+  $('iSkip').textContent=(R.skipped||0)+' รายการ';
+  save();
+}
+document.addEventListener('click',e=>{
+  const i=e.target.dataset.sd;if(i!==undefined){S.splice(+i,1);render()}
+});
+$('sBody').addEventListener('input',e=>{
+  const t=e.target,i=t.dataset.s;if(i===undefined)return;
+  S[i][t.dataset.k]=t.dataset.k==='total'?(parseFloat(t.value)||0):t.value;sum();
+});
+$('addS').onclick=()=>{S.push({iv:'',so:'',order:'',date:'',code:'',name:'',total:0});render()};
+$('clr').onclick=()=>{if(S.length&&confirm('ล้างรายการ SAP ทั้งหมด?')){S=[];R.skipped=0;render()}};
+$('imp').onclick=()=>{$('paste').value='';$('dlg').showModal()};
+$('dlgNo').onclick=()=>$('dlg').close();
+
+// ---- นำเข้า SAP: จับคู่ตามชื่อคอลัมน์ ----
+const norm=s=>String(s||'').toLowerCase().replace(/[^a-z0-9]/g,'');
+const ALIAS={
+  iv:['ivno','documentnumber','docnum','docno','invoiceno'],
+  so:['sono','salesorderno','salesorder'],
+  order:['bpreferenceno','bpreferencenumber','bpref','numatcard'],
+  date:['postingdate'],
+  code:['customercode','customersupplierno','bpcode','cardcode'],
+  name:['customername','customersuppliername','bpname','cardname'],
+  total:['documenttotal','doctotal'],
+  canceled:['canceled','cancelled']
+};
+const clean=s=>String(s??'').trim().replace(/^"(.*)"$/,'$1').trim();
+$('dlgOk').onclick=()=>{
+  const lines=$('paste').value.split(/\r?\n/).filter(l=>l.trim());
+  let hi=-1,map={};
+  for(let i=0;i<lines.length&&i<5;i++){
+    const cols=lines[i].split('\t').map(c=>norm(clean(c)));const m={};
+    for(const k in ALIAS){const j=cols.findIndex(c=>ALIAS[k].includes(c));if(j>=0)m[k]=j}
+    if(Object.keys(m).length>=3){hi=i;map=m;break}
+  }
+  if(hi<0){say('ไม่พบแถวหัวคอลัมน์ กรุณาคัดลอกพร้อมหัวคอลัมน์ (เช่น IV No., BP Reference No., Document Total)');$('dlg').close();return}
+  if(map.total===undefined){say('ไม่พบคอลัมน์ Document Total');$('dlg').close();return}
+  const missing=['order'].filter(k=>map[k]===undefined);
+  const seen=new Set(S.map(r=>r.iv).filter(Boolean));
+  let n=0,canc=0,dup=0;
+  lines.slice(hi+1).forEach(l=>{
+    const c=l.split('\t').map(clean);
+    const g=k=>map[k]!==undefined?(c[map[k]]??''):'';
+    const tot=parseFloat(String(g('total')).replace(/[,฿\s]/g,''));
+    if(isNaN(tot))return;
+    if(/^(y|yes|tyes|true|1)$/i.test(g('canceled'))){canc++;return}
+    const iv=g('iv');
+    if(iv&&seen.has(iv)){dup++;return}
+    if(iv)seen.add(iv);
+    S.push({iv,so:g('so'),order:g('order'),date:g('date'),code:g('code'),name:g('name'),total:tot});n++;
+  });
+  R.skipped=(R.skipped||0)+canc+dup;
+  $('dlg').close();render();
+  say('นำเข้า '+n+' รายการ'+(canc?' · ข้ามยกเลิก '+canc:'')+(dup?' · ข้ามซ้ำ '+dup:'')+(missing.length?' · ไม่พบคอลัมน์ BP Reference No.':''));
+};
+
+// ---- พิมพ์ / Excel ----
+function buildReport(){
+  const {sap,net}=calc();
+  const by=esc($('by').value.trim()||'-'),ch=esc($('ch').value);
+  const dt=esc($('d1').value||'-')+' ถึง '+esc($('d2').value||'-');
+  const now=new Date().toLocaleString('th-TH');
+  const showList=$('rList').checked;
+  const dn=S.length>22?' dn':'';
+  const lg=logos[$('ch').value];
+  const logoHtml=lg?`<img class="logo" src="${lg}" alt="${ch}">`:`<span class="pill">${ch}</span>`;
+  const row=(l,x,c='')=>`<tr class="${c}"><td>${l}</td><td class="n">${fmt(x)}</td></tr>`;
+  $('paper').innerHTML=`<table class="frame">
+  <thead><tr><td class="sp"></td></tr></thead>
+  <tfoot><tr><td class="sp"><div class="pf"><span>Marketplace Settlement · ${ch} · ${dt}</span><span>พิมพ์เมื่อ ${now}</span></div></td></tr></tfoot>
+  <tbody><tr><td class="bd"><div class="content">
+    <div class="top"><div><small>MARKETPLACE SETTLEMENT</small><h1>รายงานกระทบยอด</h1></div>${logoHtml}</div>
+    <div class="info">
+      <div><span>ช่องทางขาย</span><b>${ch}</b></div>
+      <div><span>ช่วงวันที่</span><b>${dt}</b></div>
+      <div><span>ผู้จัดทำ</span><b>${by}</b></div>
+    </div>
+    <div class="hd">สรุปผลการกระทบยอด</div>
+    <table class="rt"><thead><tr><th>รายการ</th><th class="n">จำนวนเงิน (บาท)</th></tr></thead><tbody>
+      ${row('ยอดขายรวม (SAP)',sap,'sb')}
+      ${row('เงินโอนเข้าบัญชีสุทธิ',net)}
+      ${row('ค่าธรรมเนียม',num('fee'))}${row('ค่าขนส่ง',num('ship'))}
+      ${row('รายการขาดส่ง',num('miss'))}${row('รายการเคลม',num('claim'))}${row('อื่นๆ',num('oth'))}
+    </tbody></table>
+    <div style="height:18px"></div>
+    
+    ${showList?`<div class="hd">รายการข้อมูลขายจาก SAP</div>
+    <table class="rt${dn}"><thead><tr><th>#</th><th>IV NO.</th><th>SO NO.</th><th>ORDER NO.</th><th>POSTING DATE</th><th>CUST CODE</th><th>CUST NAME</th><th class="n">ยอดรวม</th></tr></thead><tbody>
+    ${S.length?S.map((r,i)=>`<tr><td>${i+1}</td><td>${esc(r.iv)}</td><td>${esc(r.so)}</td><td>${esc(r.order)}</td><td>${esc(r.date)}</td><td>${esc(r.code)}</td><td>${esc(r.name)}</td><td class="n">${fmt(r.total)}</td></tr>`).join(''):'<tr><td colspan="8" style="text-align:center">ไม่มีรายการ</td></tr>'}
+    <tr class="tot"><td colspan="7">รวมทั้งสิ้น</td><td class="n">${fmt(sap)}</td></tr></tbody></table>`:''}
+      </div></td></tr></tbody></table>`;
+}
+$('btnPrint').onclick=()=>{remember();buildReport();$('report').classList.add('show')};
+$('rList').onchange=buildReport;
+$('rClose').onclick=()=>$('report').classList.remove('show');
+$('rPrint').onclick=()=>window.print();
+$('btnXlsx').onclick=()=>{
+  if(typeof XLSX==='undefined'){say('โหลดไลบรารี Excel ไม่สำเร็จ ตรวจสอบอินเทอร์เน็ต');return}
+  remember();
+  const sap=calc().sap,net=calc().net;
+  const wb=XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([
+    ['หัวข้อ','รายละเอียด'],
+    ['ช่องทางขาย',$('ch').value],['จากวันที่',$('d1').value],['ถึงวันที่',$('d2').value],
+    ['ผู้จัดทำ',$('by').value.trim()],['ข้ามรายการยกเลิก/ซ้ำ',R.skipped||0],
+    ['ยอดขายรวม (SAP)',sap],['เงินโอนเข้าบัญชีสุทธิ',net],['ค่าธรรมเนียม',num('fee')],['ค่าขนส่ง',num('ship')],['รายการขาดส่ง',num('miss')],['รายการเคลม',num('claim')],['อื่นๆ',num('oth')],['ส่วนต่างสะสม (Variance)',calc().v]]),'สรุป');
+  XLSX.utils.book_append_sheet(wb,XLSX.utils.aoa_to_sheet([
+    ['ลำดับ','IV NO.','SO NO.','ORDER NO.','POSTING DATE','CUST CODE','CUST NAME','ยอดรวม'],
+    ...S.map((r,i)=>[i+1,r.iv,r.so,r.order,r.date,r.code,r.name,+r.total])]),'SAP');
+  XLSX.writeFile(wb,'settlement_'+$('ch').value+'_'+new Date().toISOString().slice(0,10)+'.xlsx');
+};
+
+chips();logoUi();render();
+</script>
+</body>
+</html>
