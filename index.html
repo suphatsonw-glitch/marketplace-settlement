@@ -2,12 +2,18 @@
 <html lang="th">
 <head>
 <meta charset="UTF-8">
+<meta name="color-scheme" content="only light">
+<meta name="supported-color-schemes" content="light">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0d2e1a">
 <title>Marketplace Settlement & SAP Sync</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Prompt:wght@400;500;600;700&family=Sarabun:wght@400;600;700;800&display=swap" rel="stylesheet">
 <style>
+:root { color-scheme: only light; }
+[hidden] { display: none !important; }
+input, select, textarea { color-scheme: only light; }
+
 :root{--bg:#f0f4f0;--surface:#fff;--border:#d0dcd0;--border2:#e3eae3;--green:#1a7a3c;--green-l:#e8f5ee;--green-m:#b8dfc8;--green-dk:#145f2f;--df-green:#1a4a2e;--df-green-btn:#2d8a52;--yellow-l:#fff8e0;--red:#c0392b;--red-l:#fdecea;--text:#1a2a1a;--muted:#5f7f5f;--r:12px;--sh:0 2px 8px rgba(0,60,20,.1);--sh2:0 4px 20px rgba(0,60,20,.14);--safe-b:env(safe-area-inset-bottom,0px);--ease:cubic-bezier(.2,.9,.3,1)}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{height:100%;margin:0}
@@ -308,7 +314,7 @@ $('sBody').addEventListener('input',e=>{
   S[i][t.dataset.k]=t.dataset.k==='total'?(parseFloat(t.value)||0):t.value;sum();
 });
 $('addS').onclick=()=>{S.push({iv:'',so:'',order:'',date:'',code:'',name:'',total:0});render()};
-$('clr').onclick=()=>{if(S.length&&confirm('ล้างรายการ SAP ทั้งหมด?')){S=[];R.skipped=0;render()}};
+let clrArm=0;$('clr').onclick=()=>{if(!S.length)return;const b=$('clr');if(!clrArm){clrArm=1;b.dataset.t=b.textContent;b.textContent='⚠️ แตะอีกครั้งเพื่อล้าง';setTimeout(()=>{if(clrArm){clrArm=0;b.textContent=b.dataset.t}},3000);return}clrArm=0;b.textContent=b.dataset.t;S=[];R.skipped=0;render()};
 $('imp').onclick=()=>{$('paste').value='';$('dlg').showModal()};
 $('wipe').onclick=()=>$('wdlg').showModal();
 $('btnSheet').onclick=async()=>{
