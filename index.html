@@ -156,6 +156,7 @@ dialog h2{font-size:18px;font-weight:800;color:var(--df-green);margin-bottom:6px
     <a class="tb-home" href="https://suphatsonw-glitch.github.io/homepage/" aria-label="กลับหน้าโฮม" title="กลับหน้าโฮม">🏠</a>
     <div class="tb-logo" aria-hidden="true">🧾</div>
     <div class="tb-text"><div class="tb-title">Marketplace Settlement</div><div class="tb-sub">กระทบยอดเงินโอนกับยอดขาย SAP</div></div>
+    <button type="button" class="tb-home" id="wipe" aria-label="ล้างข้อมูล" title="ล้างข้อมูล">🧹</button>
   </header>
   <main class="view">
     <div id="msg" role="status"></div>
@@ -207,6 +208,7 @@ dialog h2{font-size:18px;font-weight:800;color:var(--df-green);margin-bottom:6px
     </section>
   </main>
   <footer class="dock">
+    <button class="btn btn-secondary" id="btnSheet">☁️ บันทึกลงชีต</button>
     <button class="btn btn-secondary" id="btnXlsx">📊 ส่งออก Excel</button>
     <button class="btn btn-primary" id="btnPrint">🖨 ดูตัวอย่าง / พิมพ์</button>
   </footer>
@@ -217,6 +219,12 @@ dialog h2{font-size:18px;font-weight:800;color:var(--df-green);margin-bottom:6px
   <div class="paper" id="paper"></div>
 </div>
 
+<dialog id="wdlg">
+  <h2>🧹 ล้างข้อมูลทั้งหมด?</h2>
+  <p class="sub">ล้างช่องทางขาย วันที่ ยอดเงินโอน รายการหัก/ปรับปรุง และรายการ SAP ทั้งหมดในเครื่องนี้ เพื่อเริ่มงานรอบใหม่ — กู้คืนไม่ได้<br>(รายชื่อผู้จัดทำที่จำไว้ยังอยู่)</p>
+  <div class="dlgbar"><button class="btn btn-secondary" id="wNo">ยกเลิก</button><button class="btn btn-primary" id="wOk" style="background:#c0392b;border-color:#c0392b">ล้างข้อมูล</button></div>
+</dialog>
+
 <dialog id="dlg">
   <h2>วางข้อมูลจาก SAP</h2>
   <p class="sub">คัดลอกจาก Excel/SAP พร้อมแถวหัวคอลัมน์ ระบบจับคู่ตามชื่อคอลัมน์ ไม่ต้องเรียงลำดับ<br>ORDER NO. ← BP Reference No. · ยอดรวม ← Document Total · รายการที่ Canceled เป็น Y จะถูกข้าม</p>
@@ -225,6 +233,8 @@ dialog h2{font-size:18px;font-weight:800;color:var(--df-green);margin-bottom:6px
 </dialog>
 
 <script>
+// URL ชีตกลาง (Apps Script) — บันทึกการกระทบยอดลงแท็บ กระทบยอด / กระทบยอด_รายการ
+const SYNC_URL='https://script.google.com/macros/s/AKfycbwh61f39okKUMOiZYpbgBb0iKws6CJUnzuM2usHoIGxUGbNml35yA5iZj16ssUZ2WP_/exec';
 const $=id=>document.getElementById(id);
 const fmt=n=>'฿'+Number(n||0).toLocaleString('en-US',{minimumFractionDigits:2,maximumFractionDigits:2});
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -237,7 +247,7 @@ try{
 }catch(e){}
 $('ch').value=R.channel||'Shopee';$('d1').value=R.from||'';$('d2').value=R.to||'';$('by').value=R.by||(recent[0]||'');$('net').value=R.net??'';ADJ.forEach(([k,id])=>$(id).value=R[k]??'');
 function save(){
-  R={channel:$('ch').value,from:$('d1').value,to:$('d2').value,by:$('by').value.trim(),net:$('net').value,fee:$('fee').value,ship:$('ship').value,miss:$('miss').value,claim:$('claim').value,oth:$('oth').value,skipped:R.skipped||0};
+  R={channel:$('ch').value,from:$('d1').value,to:$('d2').value,by:$('by').value.trim(),net:$('net').value,fee:$('fee').value,ship:$('ship').value,miss:$('miss').value,claim:$('claim').value,oth:$('oth').value,skipped:R.skipped||0,id:R.id||'',savedAt:R.savedAt||''};
   try{localStorage.setItem('ms_s',JSON.stringify(S));localStorage.setItem('ms_r',JSON.stringify(R));localStorage.setItem('ms_recent',JSON.stringify(recent))}catch(e){}
 }
 function say(t){$('msg').textContent=t}
@@ -292,6 +302,29 @@ $('sBody').addEventListener('input',e=>{
 $('addS').onclick=()=>{S.push({iv:'',so:'',order:'',date:'',code:'',name:'',total:0});render()};
 $('clr').onclick=()=>{if(S.length&&confirm('ล้างรายการ SAP ทั้งหมด?')){S=[];R.skipped=0;render()}};
 $('imp').onclick=()=>{$('paste').value='';$('dlg').showModal()};
+$('wipe').onclick=()=>$('wdlg').showModal();
+$('btnSheet').onclick=async()=>{
+  if(!SYNC_URL){say('ยังไม่ได้ตั้งค่า URL ชีตกลาง');return}
+  if(!S.length&&!num('net')){say('ยังไม่มีข้อมูลให้บันทึก — ใส่รายการ SAP หรือยอดเงินโอนก่อน');return}
+  save();
+  if(!R.id){const d=new Date(),p=n=>String(n).padStart(2,'0');R.id='MS-'+d.getFullYear()+p(d.getMonth()+1)+p(d.getDate())+'-'+p(d.getHours())+p(d.getMinutes())+p(d.getSeconds());save()}
+  const b=$('btnSheet');b.disabled=true;say('กำลังบันทึกลงชีต…');
+  try{
+    const res=await fetch(SYNC_URL,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({action:'saveRecon',id:R.id,channel:R.channel,from:R.from,to:R.to,by:R.by,net:R.net,fee:R.fee,ship:R.ship,miss:R.miss,claim:R.claim,oth:R.oth,rows:S})});
+    const t=await res.text();let j;try{j=JSON.parse(t)}catch(e){throw new Error(/<html/i.test(t)?'Apps Script ตอบกลับเป็นหน้าเว็บ — ตรวจการ Deploy (Anyone)':'ข้อมูลตอบกลับผิดรูปแบบ')}
+    if(!j.ok)throw new Error(j.message||j.error||'บันทึกไม่สำเร็จ');
+    R.savedAt=new Date().toISOString();save();
+    say('☁️ บันทึกลงชีตแล้ว เลขที่ '+R.id+(j.data&&j.data.updated?' (อัปเดตรอบเดิม)':'')+' · '+(j.data?j.data.status:''));
+  }catch(e){say('⚠️ บันทึกลงชีตไม่สำเร็จ: '+(navigator.onLine===false?'ไม่มีอินเทอร์เน็ต':e.message))}
+  b.disabled=false;
+};
+$('wNo').onclick=()=>$('wdlg').close();
+$('wOk').onclick=()=>{
+  S=[];R={skipped:0,id:'',savedAt:''};
+  ['d1','d2','net'].concat(ADJ.map(a=>a[1])).forEach(id=>{$(id).value=''});
+  $('ch').value='Shopee';
+  $('wdlg').close();render();say('ล้างข้อมูลแล้ว — เริ่มงานรอบใหม่ได้เลย');
+};
 $('dlgNo').onclick=()=>$('dlg').close();
 
 // ---- นำเข้า SAP: จับคู่ตามชื่อคอลัมน์ ----
