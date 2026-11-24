@@ -126,10 +126,11 @@ dialog h2{font-size:18px;font-weight:800;color:var(--df-green);margin-bottom:6px
 .sc b{font:600 14px "Prompt","Sarabun",sans-serif;font-variant-numeric:tabular-nums}
 .sm .r1 .sc{padding:10px 14px}.sm .r1 .sc b{font-size:20px}
 .paper table.rt{width:100%;border-collapse:collapse;font-size:11.5px}
-.rt th{background:var(--th);color:#fff;padding:5px 8px;text-align:left;font-weight:500}
+.rt th{background:var(--th);color:#fff;padding:5px 8px;text-align:center;font-weight:500}
 .rt td{border-bottom:1px solid var(--bd);padding:4px 8px;white-space:normal}
 .rt tbody tr:nth-child(even) td{background:var(--gz)}
-.rt .n{text-align:right;font-variant-numeric:tabular-nums}
+.rt .n{text-align:center;font-variant-numeric:tabular-nums}
+.rt td.d{text-align:center;white-space:nowrap}
 .rt tr.sb td{font-weight:700;background:var(--gl)!important}
 .rt tr.tot td{font-weight:700;background:var(--gm)!important;border-bottom:0}
 .rt.dn td{padding:2px 6px;font-size:10px}
@@ -419,6 +420,9 @@ function buildReport(){
     ${S.length?S.map((r,i)=>`<tr><td>${i+1}</td><td>${esc(r.iv)}</td><td>${esc(r.so)}</td><td>${esc(r.order)}</td><td>${esc(r.date)}</td><td>${esc(r.code)}</td><td>${esc(r.name)}</td><td class="n">${fmt(r.total)}</td></tr>`).join(''):'<tr><td colspan="8" style="text-align:center">ไม่มีรายการ</td></tr>'}
     <tr class="tot"><td colspan="7">รวมทั้งสิ้น</td><td class="n">${fmt(sap)}</td></tr></tbody></table>`:''}
       </div></td></tr></tbody></table>`;
+  // จัดกึ่งกลาง: ตัวเลข (td.n) + ช่องที่เป็นวันที่/เวลา/ลำดับ
+  var DRE=/^(\d{4}-\d{2}-\d{2}|\d{1,2}[\/.\-]\d{1,2}[\/.\-]\d{2,4}|\d{1,2} [\u0E00-\u0E7F.]{2,6} \d{2,4})( \d{1,2}:\d{2}(:\d{2})?)?$|^\d{1,2}:\d{2}$|^\d{1,4}$/;
+  document.querySelectorAll('#paper .rt td:not(.n)').forEach(function(td){if(!td.children.length&&DRE.test(td.textContent.trim()))td.classList.add('d')});
 }
 $('btnPrint').onclick=()=>{remember();buildReport();$('report').classList.add('show')};
 $('rList').onchange=buildReport;
